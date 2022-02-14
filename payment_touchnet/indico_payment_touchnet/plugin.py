@@ -15,33 +15,33 @@ from indico.modules.events.payment import (PaymentEventSettingsFormBase, Payment
 from indico.util.string import remove_accents, str_to_ascii
 from indico.web.forms.validators import UsedIf
 
-from indico_payment_paypal import _
-from indico_payment_paypal.blueprint import blueprint
-from indico_payment_paypal.util import validate_business
+from indico_payment_touchnet import _
+from indico_payment_touchnet.blueprint import blueprint
+from indico_payment_touchnet.util import validate_business
 
 
 class PluginSettingsForm(PaymentPluginSettingsFormBase):
-    url = URLField(_('API URL'), [DataRequired()], description=_('URL of the PayPal HTTP API.'))
+    url = URLField(_('API URL'), [DataRequired()], description=_('URL of the TouchNet HTTP API.'))
     business = StringField(_('Business'), [Optional(), validate_business],
-                           description=_('The default PayPal ID or email address associated with a PayPal account. '
+                           description=_('The default TouchNet ID or email address associated with a TouchNet account. '
                                          'Event managers will be able to override this.'))
 
 
 class EventSettingsForm(PaymentEventSettingsFormBase):
     business = StringField(_('Business'), [UsedIf(lambda form, _: form.enabled.data), DataRequired(),
                                            validate_business],
-                           description=_('The PayPal ID or email address associated with a PayPal account.'))
+                           description=_('The TouchNet ID or email address associated with a TouchNet account.'))
 
 
-class PaypalPaymentPlugin(PaymentPluginMixin, IndicoPlugin):
-    """PayPal
+class TouchNetPaymentPlugin(PaymentPluginMixin, IndicoPlugin):
+    """TouchNet
 
-    Provides a payment method using the PayPal IPN API.
+    Provides a payment method using the TouchNet IPN API.
     """
     configurable = True
     settings_form = PluginSettingsForm
     event_settings_form = EventSettingsForm
-    default_settings = {'method_name': 'PayPal',
+    default_settings = {'method_name': 'TouchNet',
                         'url': 'https://www.paypal.com/cgi-bin/webscr',
                         'business': ''}
     default_event_settings = {'enabled': False,
@@ -66,9 +66,9 @@ class PaypalPaymentPlugin(PaymentPluginMixin, IndicoPlugin):
             str_to_ascii(remove_accents(registration.full_name)),
             str_to_ascii(remove_accents(event.title))
         )
-        data['return_url'] = url_for_plugin('payment_paypal.success', registration.locator.uuid, _external=True)
-        data['cancel_url'] = url_for_plugin('payment_paypal.cancel', registration.locator.uuid, _external=True)
-        data['notify_url'] = url_for_plugin('payment_paypal.notify', registration.locator.uuid, _external=True)
+        data['return_url'] = url_for_plugin('payment_touchnet.success', registration.locator.uuid, _external=True)
+        data['cancel_url'] = url_for_plugin('payment_touchnet.cancel', registration.locator.uuid, _external=True)
+        data['notify_url'] = url_for_plugin('payment_touchnet.notify', registration.locator.uuid, _external=True)
 
     def _get_encoding_warning(self, plugin=None, event=None):
         if plugin == self:

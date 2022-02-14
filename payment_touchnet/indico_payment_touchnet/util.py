@@ -11,13 +11,13 @@ from wtforms import ValidationError
 
 from indico.util.string import is_valid_mail
 
-from indico_payment_paypal import _
+from indico_payment_touchnet import _
 
 
 def validate_business(form, field):
-    """Valiates a PayPal business string.
+    """Valiates a TouchNet business string.
 
-    It can either be an email address or a paypal business account ID.
+    It can either be an email address or a touchnet business account ID.
     """
     if not is_valid_mail(field.data, multi=False) and not re.match(r'^[a-zA-Z0-9]{13}$', field.data):
-        raise ValidationError(_('Invalid email address / paypal ID'))
+        raise ValidationError(_('Invalid email address / touchnet ID'))

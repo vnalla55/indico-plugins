@@ -19,19 +19,19 @@ from indico.modules.events.registration.models.registrations import Registration
 from indico.web.flask.util import url_for
 from indico.web.rh import RH
 
-from indico_payment_paypal import _
+from indico_payment_touchnet import _
 
 
 IPN_VERIFY_EXTRA_PARAMS = (('cmd', '_notify-validate'),)
 
 
-paypal_transaction_action_mapping = {'Completed': TransactionAction.complete,
+touchnet_transaction_action_mapping = {'Completed': TransactionAction.complete,
                                      'Denied': TransactionAction.reject,
                                      'Pending': TransactionAction.pending}
 
 
-class RHPaypalIPN(RH):
-    """Process the notification sent by the PayPal"""
+class RHTouchNetIPN(RH):
+    """Process the notification sent by the TouchNet"""
 
     CSRF_ENABLED = False
 
@@ -46,7 +46,7 @@ class RHPaypalIPN(RH):
         verify_params = list(chain(IPN_VERIFY_EXTRA_PARAMS, request.form.items()))
         result = requests.post(current_plugin.settings.get('url'), data=verify_params).text
         if result != 'VERIFIED':
-            current_plugin.logger.warning("Paypal IPN string %s did not validate (%s)", verify_params, result)
+            current_plugin.logger.warning("TouchNet IPN string %s did not validate (%s)", verify_params, result)
             return
         if self._is_transaction_duplicated():
             current_plugin.logger.info("Payment not recorded because transaction was duplicated\nData received: %s",
@@ -60,7 +60,7 @@ class RHPaypalIPN(RH):
             current_plugin.logger.warning("Payment refunded (status: %s)\nData received: %s",
                                           payment_status, request.form)
             return
-        if payment_status not in paypal_transaction_action_mapping:
+        if payment_status not in touchnet_transaction_action_mapping:
             current_plugin.logger.warning("Payment status '%s' not recognized\nData received: %s",
                                           payment_status, request.form)
             return
@@ -68,8 +68,8 @@ class RHPaypalIPN(RH):
         register_transaction(registration=self.registration,
                              amount=float(request.form['mc_gross']),
                              currency=request.form['mc_currency'],
-                             action=paypal_transaction_action_mapping[payment_status],
-                             provider='paypal',
+                             action=touchnet_transaction_action_mapping[payment_status],
+                             provider='touchnet',
                              data=request.form)
 
     def _verify_business(self):
@@ -97,13 +97,13 @@ class RHPaypalIPN(RH):
 
     def _is_transaction_duplicated(self):
         transaction = self.registration.transaction
-        if not transaction or transaction.provider != 'paypal':
+        if not transaction or transaction.provider != 'touchnet':
             return False
         return (transaction.data['payment_status'] == request.form.get('payment_status') and
                 transaction.data['txn_id'] == request.form.get('txn_id'))
 
 
-class RHPaypalSuccess(RHPaypalIPN):
+class RHTouchNetSuccess(RHTouchNetIPN):
     """Confirmation message after successful payment"""
 
     def _process(self):
@@ -111,7 +111,7 @@ class RHPaypalSuccess(RHPaypalIPN):
         return redirect(url_for('event_registration.display_regform', self.registration.locator.registrant))
 
 
-class RHPaypalCancel(RHPaypalIPN):
+class RHTouchNetCancel(RHTouchNetIPN):
     """Cancellation message"""
 
     def _process(self):
