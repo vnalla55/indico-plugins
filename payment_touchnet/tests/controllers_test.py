@@ -12,8 +12,8 @@ from flask import request
 
 from indico.modules.events.payment.models.transactions import PaymentTransaction
 
-from indico_payment_paypal.controllers import RHPaypalIPN
-from indico_payment_paypal.plugin import PaypalPaymentPlugin
+from indico_payment_touchnet.controllers import RHTouchNetIPN
+from indico_payment_touchnet.plugin import TouchNetPaymentPlugin
 
 
 @pytest.mark.usefixtures('db', 'request_context')
@@ -25,12 +25,12 @@ from indico_payment_paypal.plugin import PaypalPaymentPlugin
     ({},                         False)
 ))
 def test_ipn_verify_business(formdata, expected, dummy_event):
-    rh = RHPaypalIPN()
+    rh = RHTouchNetIPN()
     rh.registration = MagicMock()
     rh.registration.registration_form.event = dummy_event
-    PaypalPaymentPlugin.event_settings.set(dummy_event, 'business', 'TeST')
+    TouchNetPaymentPlugin.event_settings.set(dummy_event, 'business', 'TeST')
     request.form = formdata
-    with PaypalPaymentPlugin.instance.plugin_context():
+    with TouchNetPaymentPlugin.instance.plugin_context():
         assert rh._verify_business() == expected
 
 
@@ -42,14 +42,14 @@ def test_ipn_verify_business(formdata, expected, dummy_event):
     ('10.00', 'CHF', False),
 ))
 def test_ipn_verify_amount(mocker, amount, currency, expected):
-    nai = mocker.patch('indico_payment_paypal.controllers.notify_amount_inconsistency')
-    rh = RHPaypalIPN()
+    nai = mocker.patch('indico_payment_touchnet.controllers.notify_amount_inconsistency')
+    rh = RHTouchNetIPN()
     rh.event = MagicMock(id=1)
     rh.registration = MagicMock()
     rh.registration.price = 13.37
     rh.registration.currency = currency
     request.form = {'mc_gross': amount, 'mc_currency': 'EUR'}
-    with PaypalPaymentPlugin.instance.plugin_context():
+    with TouchNetPaymentPlugin.instance.plugin_context():
         assert rh._verify_amount() == expected
         assert nai.called == (not expected)
 
@@ -63,11 +63,11 @@ def test_ipn_verify_amount(mocker, amount, currency, expected):
 ))
 def test_ipn_is_transaction_duplicated(txn_id, payment_status, expected):
     request.form = {'payment_status': 'Completed', 'txn_id': '12345'}
-    rh = RHPaypalIPN()
+    rh = RHTouchNetIPN()
     rh.registration = MagicMock()
     rh.registration.transaction = None
     assert not rh._is_transaction_duplicated()
-    transaction = PaymentTransaction(provider='paypal', data={'payment_status': payment_status, 'txn_id': txn_id})
+    transaction = PaymentTransaction(provider='touchnet', data={'payment_status': payment_status, 'txn_id': txn_id})
     rh.registration.transaction = transaction
     assert rh._is_transaction_duplicated() == expected
 
@@ -83,11 +83,11 @@ def test_ipn_is_transaction_duplicated(txn_id, payment_status, expected):
     None,
 ))
 def test_ipn_process(mocker, fail):
-    rt = mocker.patch('indico_payment_paypal.controllers.register_transaction')
-    post = mocker.patch('indico_payment_paypal.controllers.requests.post')
-    mocker.patch('indico_payment_paypal.controllers.notify_amount_inconsistency')
+    rt = mocker.patch('indico_payment_touchnet.controllers.register_transaction')
+    post = mocker.patch('indico_payment_touchnet.controllers.requests.post')
+    mocker.patch('indico_payment_touchnet.controllers.notify_amount_inconsistency')
     post.return_value.text = 'INVALID' if fail == 'verify' else 'VERIFIED'
-    rh = RHPaypalIPN()
+    rh = RHTouchNetIPN()
     rh._verify_business = MagicMock()
     rh._is_transaction_duplicated = lambda: fail == 'dup_txn'
     rh.event = MagicMock(id=1)
@@ -99,7 +99,7 @@ def test_ipn_process(mocker, fail):
     request.args = {'registrantId': '1'}
     request.form = {'payment_status': payment_status, 'txn_id': '12345', 'mc_gross': amount,
                     'mc_currency': 'EUR', 'business': 'foo@bar.com'}
-    with PaypalPaymentPlugin.instance.plugin_context():
+    with TouchNetPaymentPlugin.instance.plugin_context():
         rh._process()
         assert post.called
         assert rt.called == (fail is None)
