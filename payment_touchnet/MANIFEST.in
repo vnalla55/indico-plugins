@@ -1,0 +1,5 @@
+graft indico_payment_touchnet/static
+graft indico_payment_touchnet/templates
+graft indico_payment_touchnet/translations
+
+global-exclude *.pyc __pycache__ .keep
