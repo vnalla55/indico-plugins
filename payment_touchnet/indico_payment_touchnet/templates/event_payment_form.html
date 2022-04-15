@@ -1,0 +1,22 @@
+Clicking on the <strong>Pay now</strong> button you will get redirected to the Touchnet site in order to complete your transaction.
+
+<dl class="i-data-list">
+    <dt>{% trans %}First name{% endtrans %}</dt>
+    <dd>{{ registration.first_name }}</dd>
+    <dt>{% trans %}Last name{% endtrans %}</dt>
+    <dd>{{ registration.last_name }}</dd>
+    <dt>{% trans %}Total amount{% endtrans %}</dt>
+    <dd>{{ format_currency(amount, currency, locale=session.lang) }}</dd>
+    <dt></dt>
+    <dd>
+        <form action="{{ settings.url }}" method="POST">
+            <input type="hidden" name="UPAY_SITE_ID" value="{{ event_settings.siteId }}" />
+            <input type="hidden" name="EXT_TRANS_ID" value="YourTransactionId" />
+            <input type="hidden" name="AMT" value="{{ amount }}" />
+            <input type="hidden" name="VALIDATION_KEY" value="YourHash" />
+            <input type="submit" name="submit" alt='Touchnet'/>
+        </form>
+    </dd>
+</dl>
+
+
