@@ -10,10 +10,10 @@ Clicking on the <strong>Pay now</strong> button you will get redirected to the T
     <dt></dt>
     <dd>
         <form action="{{ settings.url }}" method="POST">
-            <input type="hidden" name="UPAY_SITE_ID" value="{{ event_settings.siteId }}" />
-            <input type="hidden" name="EXT_TRANS_ID" value="YourTransactionId" />
+            <input type="hidden" name="UPAY_SITE_ID" value="{{ event_settings.siteid }}" />
+            <input type="hidden" name="EXT_TRANS_ID" value="{{ registration.event_id }}_{{ registration.id }}" />
             <input type="hidden" name="AMT" value="{{ amount }}" />
-            <input type="hidden" name="VALIDATION_KEY" value="YourHash" />
+            <input type="hidden" name="VALIDATION_KEY" value="{{ gethash_validationkey(self, data, amount) }}" />
             <input type="submit" name="submit" alt='Touchnet'/>
         </form>
     </dd>

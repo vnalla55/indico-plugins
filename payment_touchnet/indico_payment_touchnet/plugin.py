@@ -19,16 +19,13 @@ from indico_payment_touchnet import _
 from indico_payment_touchnet.blueprint import blueprint
 from indico_payment_touchnet.util import validate_business
 
+import hashlib
+import base64
 
 class PluginSettingsForm(PaymentPluginSettingsFormBase):
     url = URLField(_('API URL'), [DataRequired()], description=_('URL of the TouchNet HTTP API.'))
-    # business = StringField(_('Business'), [Optional(), validate_business],
-    #                         description=_('The default Touchnet ID or email address associated with a Touchnet account. '
-    #                                      'Event managers will be able to override this.'))
-
 
 class EventSettingsForm(PaymentEventSettingsFormBase):
-    business = description=(_('The Touchnet ID or email address associated with a Touchnet account.'))
     siteid = StringField(_('SITE ID'), [DataRequired()], description=_('Site ID.'))
     validationkey = StringField(_('Validation Key'), [DataRequired()], description=_('Validation Key.'))
     postingkey = StringField(_('Posting Key'), [DataRequired()], description=_('Posting Key.'))                        
@@ -49,9 +46,21 @@ class TouchNetPaymentPlugin(PaymentPluginMixin, IndicoPlugin):
     default_event_settings = {'enabled': False,
                               'method_name': None,
                               'siteid':"58",
-                              'validationkey': "aboaisdlasidli",
-                              'postingkey':"lasidlaksdi",
+                              'validationkey': "eZ22UJi0Uv0ghVSI",
+                              'postingkey':"pG1eT6NxrGnyjbuY",
                             }
+
+    def getvalidationkey(self):
+        return self.default_event_settings.validationkey
+
+    def gethash_validationkey(self, data, amount):
+        registration = data['registration']
+        amt = '%.2f' % amount
+        extId = "c%sr%s" % (registration.event_id, registration.id)
+        m = hashlib.md5()
+        m.update('%s%s%s' % (self.getvalidationkey(), extId, amt))
+        vk = base64.b64encode(m.digest())
+        return vk
 
     def init(self):
         super().init()
