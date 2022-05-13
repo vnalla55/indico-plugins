@@ -19,16 +19,28 @@ from indico_payment_touchnet import _
 from indico_payment_touchnet.blueprint import blueprint
 from indico_payment_touchnet.util import validate_business
 
-import hashlib
+#Mayuresh
 import base64
+from hashlib import md5
+from base64 import standard_b64encode
 
 class PluginSettingsForm(PaymentPluginSettingsFormBase):
     url = URLField(_('API URL'), [DataRequired()], description=_('URL of the TouchNet HTTP API.'))
+    business = StringField(_('Business'), [Optional(), validate_business],
+                            description=_('The default Touchnet ID or email address associated with a Touchnet account. '
+                                         'Event managers will be able to override this.'))
+    siteId = StringField(_('SITE ID'), [DataRequired()], description=_('Site ID.'))
+    validationKey = StringField(_('Validation Key'), [DataRequired()], description=_('Validation Key.'))
+    postingKey = StringField(_('Posting Key'), [DataRequired()], description=_('Posting Key.'))
+    
+    
+    
+
 
 class EventSettingsForm(PaymentEventSettingsFormBase):
-    siteid = StringField(_('SITE ID'), [DataRequired()], description=_('Site ID.'))
-    validationkey = StringField(_('Validation Key'), [DataRequired()], description=_('Validation Key.'))
-    postingkey = StringField(_('Posting Key'), [DataRequired()], description=_('Posting Key.'))                        
+    business = StringField(_('Business'), [UsedIf(lambda form, _: form.enabled.data), Optional(),
+                                           validate_business],
+                            description=_('The Touchnet ID or email address associated with a Touchnet account.'))
    
 
 class TouchNetPaymentPlugin(PaymentPluginMixin, IndicoPlugin):
@@ -36,31 +48,26 @@ class TouchNetPaymentPlugin(PaymentPluginMixin, IndicoPlugin):
 
     Provides a payment method using the TouchNet IPN API.
     """
+
+
     configurable = True
     settings_form = PluginSettingsForm
     event_settings_form = EventSettingsForm
     default_settings = {'method_name': 'TouchNet',
-                        'url': '',
+                        'url': 'https://test.secure.touchnet.net:8443/C20210test_upay/web/index.jsp',
+                        'business': '',
+                        'siteId':"58",
+                        'postingKey':"pG1eT6NxrGnyjbuY",
+                        'validationKey':"eZ22UJi0Uv0ghVSI",
                        }
-                        
+    
     default_event_settings = {'enabled': False,
-                              'method_name': None,
-                              'siteid':"58",
-                              'validationkey': "eZ22UJi0Uv0ghVSI",
-                              'postingkey':"pG1eT6NxrGnyjbuY",
+                            'method_name': None,
+                            'business': None,
+                            'siteId':"58",
+                            'postingKey':"pG1eT6NxrGnyjbuY",
+                            
                             }
-
-    def getvalidationkey(self):
-        return self.default_event_settings.validationkey
-
-    def gethash_validationkey(self, data, amount):
-        registration = data['registration']
-        amt = '%.2f' % amount
-        extId = "c%sr%s" % (registration.event_id, registration.id)
-        m = hashlib.md5()
-        m.update('%s%s%s' % (self.getvalidationkey(), extId, amt))
-        vk = base64.b64encode(m.digest())
-        return vk
 
     def init(self):
         super().init()
@@ -83,6 +90,18 @@ class TouchNetPaymentPlugin(PaymentPluginMixin, IndicoPlugin):
         data['return_url'] = url_for_plugin('payment_touchnet.success', registration.locator.uuid, _external=True)
         data['cancel_url'] = url_for_plugin('payment_touchnet.cancel', registration.locator.uuid, _external=True)
         data['notify_url'] = url_for_plugin('payment_touchnet.notify', registration.locator.uuid, _external=True)
+        
+        #Mayuresh
+        ext_trans_id = str(data['event_id']) + "_" + str(data['registration_id']) #"abc123"
+        validation_key =  str(self.default_settings['validationKey']) # "eZ22UJi0Uv0ghVSI"
+        hash_string = validation_key + ext_trans_id + str(data['amount']) #validation_key + transaction_id + amount
+        indico_hash = md5()
+        indico_hash.update(hash_string.encode())
+        byte_hash = standard_b64encode(indico_hash.digest())
+        string_hash = str(byte_hash.decode("utf-8"))
+        data['encoded_validation_key'] =  string_hash #"Dakx8ZmcayS7FJbC/S+npQ=="
+        data['ext_trans_id'] =  ext_trans_id
+
 
     def _get_encoding_warning(self, plugin=None, event=None):
         if plugin == self:
