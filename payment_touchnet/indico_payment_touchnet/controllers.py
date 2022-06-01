@@ -42,7 +42,6 @@ class RHTouchNetIPN(RH):
             raise BadRequest
 
     def _process(self):
-        self._verify_business()
         verify_params = list(chain(IPN_VERIFY_EXTRA_PARAMS, request.form.items()))
         result = requests.post(current_plugin.settings.get('url'), data=verify_params).text
         if result != 'VERIFIED':
@@ -71,19 +70,6 @@ class RHTouchNetIPN(RH):
                              action=touchnet_transaction_action_mapping[payment_status],
                              provider='touchnet',
                              data=request.form)
-    
-
-
-    def _verify_business(self):
-        expected = current_plugin.event_settings.get(self.registration.registration_form.event, 'business').lower()
-        candidates = {request.form.get('business', '').lower(),
-                      request.form.get('receiver_id', '').lower(),
-                      request.form.get('receiver_email', '').lower()}
-        if expected in candidates:
-            return True
-        current_plugin.logger.warning("Unexpected business: %s not in %r (request data: %r)", expected, candidates,
-                                      request.form)
-        return False
 
     def _verify_amount(self):
         expected_amount = self.registration.price

@@ -25,22 +25,13 @@ from hashlib import md5
 from base64 import standard_b64encode
 
 class PluginSettingsForm(PaymentPluginSettingsFormBase):
-    url = URLField(_('API URL'), [DataRequired()], description=_('URL of the TouchNet HTTP API.'))
-    business = StringField(_('Business'), [Optional(), validate_business],
-                            description=_('The default Touchnet ID or email address associated with a Touchnet account. '
-                                         'Event managers will be able to override this.'))
+    url = URLField(_('API URL'), [DataRequired()], description=_('URL of the TouchNet HTTP API.'))  
+    
+
+class EventSettingsForm(PaymentEventSettingsFormBase):
     siteId = StringField(_('SITE ID'), [DataRequired()], description=_('Site ID.'))
     validationKey = StringField(_('Validation Key'), [DataRequired()], description=_('Validation Key.'))
     postingKey = StringField(_('Posting Key'), [DataRequired()], description=_('Posting Key.'))
-    
-    
-    
-
-
-class EventSettingsForm(PaymentEventSettingsFormBase):
-    business = StringField(_('Business'), [UsedIf(lambda form, _: form.enabled.data), Optional(),
-                                           validate_business],
-                            description=_('The Touchnet ID or email address associated with a Touchnet account.'))
    
 
 class TouchNetPaymentPlugin(PaymentPluginMixin, IndicoPlugin):
@@ -54,19 +45,14 @@ class TouchNetPaymentPlugin(PaymentPluginMixin, IndicoPlugin):
     settings_form = PluginSettingsForm
     event_settings_form = EventSettingsForm
     default_settings = {'method_name': 'TouchNet',
-                        'url': 'https://test.secure.touchnet.net:8443/C20210test_upay/web/index.jsp',
-                        'business': '',
-                        'siteId':"58",
-                        'postingKey':"pG1eT6NxrGnyjbuY",
-                        'validationKey':"eZ22UJi0Uv0ghVSI",
+                        'url': 'https://test.secure.touchnet.net:8443/C20210test_upay/web/index.jsp'
                        }
     
     default_event_settings = {'enabled': False,
                             'method_name': None,
-                            'business': None,
                             'siteId':"58",
                             'postingKey':"pG1eT6NxrGnyjbuY",
-                            
+                            'validationKey':"eZ22UJi0Uv0ghVSI"
                             }
 
     def init(self):
@@ -93,7 +79,7 @@ class TouchNetPaymentPlugin(PaymentPluginMixin, IndicoPlugin):
         
         #Mayuresh
         ext_trans_id = str(data['event_id']) + "_" + str(data['registration_id']) #"abc123"
-        validation_key =  str(self.default_settings['validationKey']) # "eZ22UJi0Uv0ghVSI"
+        validation_key =  str(self.default_event_settings['validationKey']) # "eZ22UJi0Uv0ghVSI"
         hash_string = validation_key + ext_trans_id + str(data['amount']) #validation_key + transaction_id + amount
         indico_hash = md5()
         indico_hash.update(hash_string.encode())
