@@ -83,7 +83,6 @@ class RHTouchNetIPN(RH):
         notify_amount_inconsistency(self.registration, amount, currency)
         return False
 
-
     def _is_transaction_duplicated(self):
         transaction = self.registration.transaction
         if not transaction or transaction.provider != 'touchnet':
