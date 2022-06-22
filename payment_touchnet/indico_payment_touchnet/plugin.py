@@ -29,9 +29,9 @@ class PluginSettingsForm(PaymentPluginSettingsFormBase):
     
 
 class EventSettingsForm(PaymentEventSettingsFormBase):
-    siteId = StringField(_('SITE ID'), [DataRequired()], description=_('Site ID.'))
-    validationKey = StringField(_('Validation Key'), [DataRequired()], description=_('Validation Key.'))
-    postingKey = StringField(_('Posting Key'), [DataRequired()], description=_('Posting Key.'))
+    site_id = StringField(_('SITE ID'), [DataRequired()], description=_('Site ID.'))
+    validation_key = StringField(_('Validation Key'), [DataRequired()], description=_('Validation Key.'))
+    posting_key = StringField(_('Posting Key'), [DataRequired()], description=_('Posting Key.'))
    
 
 class TouchNetPaymentPlugin(PaymentPluginMixin, IndicoPlugin):
@@ -50,9 +50,9 @@ class TouchNetPaymentPlugin(PaymentPluginMixin, IndicoPlugin):
     
     default_event_settings = {'enabled': False,
                             'method_name': None,
-                            'siteId':"58",
-                            'postingKey':"pG1eT6NxrGnyjbuY",
-                            'validationKey':"eZ22UJi0Uv0ghVSI"
+                            'site_id':"58",
+                            'posting_key':"pG1eT6NxrGnyjbuY",
+                            'validation_key':"eZ22UJi0Uv0ghVSI"
                             }
 
     def init(self):
@@ -79,7 +79,7 @@ class TouchNetPaymentPlugin(PaymentPluginMixin, IndicoPlugin):
         
         #Mayuresh
         ext_trans_id = str(data['event_id']) + "_" + str(data['registration_id']) #"abc123"
-        validation_key =  str(self.default_event_settings['validationKey']) # "eZ22UJi0Uv0ghVSI"
+        validation_key =  str(self.default_event_settings['validation_key']) # "eZ22UJi0Uv0ghVSI"
         hash_string = validation_key + ext_trans_id + str(data['amount']) #validation_key + transaction_id + amount
         indico_hash = md5()
         indico_hash.update(hash_string.encode())
